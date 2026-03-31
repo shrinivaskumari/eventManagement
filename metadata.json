@@ -1,0 +1,5 @@
+{
+  "name": "Remix: Event Management Portal",
+  "description": "A comprehensive event management platform with user and admin panels, category-based events, and registration tracking.",
+  "requestFramePermissions": []
+}

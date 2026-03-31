@@ -27,7 +27,7 @@ export default function Navbar() {
           <div className="flex items-center w-20 sm:w-24">
             <Link to="/" className="block">
               <img 
-                src="https://raw.githubusercontent.com/shrinivaskumari/bhimjayanti/main/slideimages/logo.png" 
+                src="/logo.png" 
                 alt="Logo" 
                 className="h-14 sm:h-16 md:h-20 w-auto z-10 drop-shadow-md brightness-110 contrast-125"
                 referrerPolicy="no-referrer"

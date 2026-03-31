@@ -11,6 +11,7 @@ import fs from "fs";
 import { createServer } from "node:net";
 
 dotenv.config();
+process.env.DISABLE_HMR ??= "true";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -400,6 +401,18 @@ async function startServer() {
     res.json(registrationsWithPlayers);
   });
 
+  app.delete("/api/admin/registrations/:registrationId", authenticateToken, isAdmin, (req, res) => {
+    const registrationId = req.params.registrationId;
+    const existing = db.prepare("SELECT id FROM registrations WHERE id = ?").get(registrationId);
+
+    if (!existing) {
+      return res.status(404).json({ error: "Registration not found" });
+    }
+
+    db.prepare("DELETE FROM registrations WHERE id = ?").run(registrationId);
+    res.json({ success: true });
+  });
+
   // Admin: Export to CSV
   app.get("/api/admin/export/:eventId", authenticateToken, isAdmin, (req, res) => {
     const event: any = db.prepare("SELECT name FROM events WHERE id = ?").get(req.params.eventId);
@@ -467,13 +480,10 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const hmrPort = Number(process.env.HMR_PORT || 0);
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: {
-          port: hmrPort,
-        },
+        hmr: false,
       },
       appType: "spa",
     });

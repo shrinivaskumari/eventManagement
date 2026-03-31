@@ -125,6 +125,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteRegistration = async (registrationId: number) => {
+    if (!selectedEventId) return;
+
+    const shouldDelete = window.confirm("Delete this registration entry?");
+    if (!shouldDelete) return;
+
+    try {
+      await api.delete(`/admin/registrations/${registrationId}`, token!);
+      toast.success("Registration deleted");
+      await viewUsers(selectedEventId);
+      fetchEvents();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete registration");
+    }
+  };
+
   const exportToExcel = (eventId: number, eventName: string) => {
     const exportData: any[] = [];
     
@@ -311,16 +327,25 @@ export default function AdminDashboard() {
                 <p className="text-center text-gold/50 py-8">No registrations yet.</p>
               ) : (
                 <div className="space-y-6">
-                  {selectedEventUsers.map((team, idx) => (
-                    <div key={idx} className="bg-gray-dark rounded-xl p-4 border border-gold/10">
+                  {selectedEventUsers.map((team) => (
+                    <div key={team.id} className="bg-gray-dark rounded-xl p-4 border border-gold/10">
                       <div className="flex justify-between items-center mb-4 border-b border-gold/10 pb-2">
                         <div>
                           <h4 className="text-lg font-bold text-cream">{team.team_name || "Unnamed Team"}</h4>
                           <p className="text-xs text-gold/70">Captain: {team.firstName} {team.lastName} ({team.captain_mobile})</p>
                         </div>
-                        <span className="text-xs bg-gold/20 text-gold px-2 py-1 rounded">
-                          {team.players.length} Players
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs bg-gold/20 text-gold px-2 py-1 rounded">
+                            {team.players.length} Players
+                          </span>
+                          <button
+                            onClick={() => handleDeleteRegistration(team.id)}
+                            className="text-red-500 hover:text-red-400 p-1 transition"
+                            title="Delete registration"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {team.players.map((player: any, pIdx: number) => (

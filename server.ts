@@ -8,7 +8,6 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import multer from "multer";
 import fs from "fs";
-import { createServer } from "node:net";
 
 dotenv.config();
 process.env.DISABLE_HMR ??= "true";
@@ -193,33 +192,23 @@ if (!existingAdmin) {
 
 async function startServer() {
   const app = express();
-  const requestedPort = Number(process.env.PORT || 3000);
-
-  const getAvailablePort = async (preferredPort: number) => {
-    const maxAttempts = 10;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const port = preferredPort + attempt;
-      const isFree = await new Promise<boolean>((resolve) => {
-        const tester = createServer();
-        tester.once("error", () => resolve(false));
-        tester.once("listening", () => {
-          tester.close(() => resolve(true));
-        });
-        tester.listen(port, "0.0.0.0");
-      });
-
-      if (isFree) {
-        return port;
-      }
-    }
-    throw new Error(`No available port found starting from ${preferredPort}`);
-  };
-
-  const PORT = await getAvailablePort(requestedPort);
+  const PORT = Number(process.env.PORT || 8080);
 
   app.use(express.json());
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
+  });
+
+  // Serve static files from dist
+  app.use(express.static(path.join(__dirname, '../dist')));
+
+  // SPA fallback - serve index.html for all non-API routes
+  app.get('*', (req, res, next) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+      res.sendFile(path.join(__dirname, '../dist/index.html'));
+    } else {
+      next();
+    }
   });
 
   // Serve uploaded files with headers that allow framing in the preview environment
@@ -751,18 +740,9 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    if (PORT !== requestedPort) {
-      console.warn(`Port ${requestedPort} is busy. Using port ${PORT} instead.`);
-    }
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }

@@ -603,6 +603,46 @@ async function startServer() {
     res.json(users);
   });
 
+  app.delete("/api/admin/users/:id", authenticateToken, isAdmin, (req, res) => {
+    const userId = Number(req.params.id);
+    const requestedBy = (req as any).user?.id;
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
+
+    const user: any = db
+      .prepare("SELECT id, role FROM users WHERE id = ?")
+      .get(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.role === "admin") {
+      return res.status(400).json({ error: "Admin user cannot be deleted" });
+    }
+
+    if (requestedBy === userId) {
+      return res.status(400).json({ error: "You cannot delete your own account" });
+    }
+
+    const deleteUserTx = db.transaction((id: number) => {
+      // Keep contact message history but detach it from deleted user.
+      db.prepare("UPDATE messages SET user_id = NULL WHERE user_id = ?").run(id);
+      // Remove registrations first; players are deleted via ON DELETE CASCADE.
+      db.prepare("DELETE FROM registrations WHERE user_id = ?").run(id);
+      db.prepare("DELETE FROM users WHERE id = ?").run(id);
+    });
+
+    try {
+      deleteUserTx(userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete user" });
+    }
+  });
+
   // Admin: View Registered Teams and Players
   app.get("/api/admin/registrations/:eventId", authenticateToken, isAdmin, (req, res) => {
     const registrations = db.prepare(`

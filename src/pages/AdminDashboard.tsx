@@ -153,6 +153,25 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteUser = async (userId: number, userName: string) => {
+    const shouldDelete = window.confirm(`Delete user ${userName}? This will also delete their event registrations.`);
+    if (!shouldDelete) return;
+
+    try {
+      await api.delete(`/admin/users/${userId}`, token!);
+      toast.success("User deleted successfully");
+
+      if (selectedEventId) {
+        await viewUsers(selectedEventId);
+      }
+
+      fetchRegisteredUsers();
+      fetchEvents();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete user");
+    }
+  };
+
   const exportToExcel = (eventId: number, eventName: string) => {
     const exportData: any[] = [];
     
@@ -369,12 +388,13 @@ export default function AdminDashboard() {
                   <th className="px-4 sm:px-6 py-4 font-bold">Last Name</th>
                   <th className="px-4 sm:px-6 py-4 font-bold">Mobile</th>
                   <th className="px-4 sm:px-6 py-4 font-bold">Password</th>
+                  <th className="px-4 sm:px-6 py-4 font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {registeredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 sm:px-6 py-12 text-center text-gray-500">
+                    <td colSpan={5} className="px-4 sm:px-6 py-12 text-center text-gray-500">
                       No registered users found.
                     </td>
                   </tr>
@@ -385,6 +405,15 @@ export default function AdminDashboard() {
                       <td className="px-4 sm:px-6 py-4 font-bold text-white whitespace-nowrap">{user.lastName}</td>
                       <td className="px-4 sm:px-6 py-4 text-gray-300 whitespace-nowrap">{user.mobile}</td>
                       <td className="px-4 sm:px-6 py-4 text-gray-400 text-xs break-all">{user.password || "Not available (registered before update)"}</td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <button
+                          onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
+                          className="text-red-500 hover:text-red-400 transition"
+                          title="Delete user"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

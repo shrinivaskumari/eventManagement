@@ -33,3 +33,24 @@ Render uses:
 - Build command: `npm install && npm run build`
 - Start command: `npm run start`
 - Health check: `/health`
+
+## Deploy On Railway
+
+This project also runs on Railway as a Node service.
+
+1. Push this repository to GitHub.
+2. In Railway, create a new project from this repo.
+3. Railway will pick up `railway.json` automatically.
+4. Add required environment variables:
+   - `NODE_ENV=production`
+   - `JWT_SECRET=<strong-random-secret>`
+   - `GEMINI_API_KEY=<your-key>`
+5. (Recommended for SQLite persistence) Add a Railway Volume and set:
+   - `DB_PATH=/data/events.db`
+   - `UPLOADS_DIR=/data/uploads/rules`
+6. Deploy.
+
+Railway uses:
+- Build command: `npm install && npm run build`
+- Start command: `npm run start`
+- Health check: `/health`

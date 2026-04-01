@@ -13,16 +13,20 @@ import { createServer } from "node:net";
 dotenv.config();
 process.env.DISABLE_HMR ??= "true";
 
+const DB_PATH = process.env.DB_PATH || "events.db";
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join("public", "uploads", "rules");
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), "public", "uploads", "rules");
+// Allow storage paths to be configured for persistent volumes in production.
+// Defaults keep local development behavior unchanged.
+const uploadsDir = path.join(process.cwd(), UPLOADS_DIR);
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-const db = new Database("events.db");
+const db = new Database(DB_PATH);
 db.pragma("foreign_keys = ON");
 const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key";
 const ADMIN_MOBILE = "8530469718";
